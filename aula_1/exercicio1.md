@@ -15,9 +15,8 @@ Nesta atividade, você irá reproduzir o algoritmo de *Byte Pair Encoding* (BPE)
 
 ## Conjunto de Dados
 
-- O professor disponibilizará o arquivo `text_corpus.txt` contendo uma coleção de textos que será utilizada para a aplicação do algoritmo BPE. Certifique-se de baixar o arquivo antes de prosseguir com a execução do código. **O arquivo será disponibilizado um dia antes do prazo final.**
-  
-  *Para baixar o arquivo `text_corpus.txt`, acesse o repositório compartilhado pelo professor na plataforma da disciplina.*
+- O arquivo contendo uma coleção de textos pode ser baixado no link [Aqui!](https://unbbr-my.sharepoint.com/:u:/g/personal/thiagodepaulo_unb_br/ETRbkBjaKihNmsQI0eWq9RkB3I9tE-SluKccadGOFJYqmA?e=V9k4Vb).
+- O corpus é formado por vários arquivos no formato '.json'. Processe o BPE em todos os arquivos. 
 
 ## O que deve ser entregue:
 
