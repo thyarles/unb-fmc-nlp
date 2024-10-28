@@ -81,6 +81,8 @@ class MyBPE():
         # Vocabulário com os valores de 0 a 255
         vocab = {idx: bytes([idx]) for idx in range(256)}
         for i in range(num_merges):
+            # Imprime progresso
+            print(f'Merge {i} de {num_merges}...')
             # Pega a frequênica dos pares
             stats = self._get_stats(ids)
             # Procura pelo de maior frequência
