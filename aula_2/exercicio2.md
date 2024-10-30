@@ -54,4 +54,4 @@ Nesta atividade, você irá construir um modelo de bigrama para geração de tex
 - Documentação e comentários explicativos.
 - Correta aplicação do tokenizador desenvolvido anteriormente.
 
-**Prazo**: Submeta a atividade até **05/11/2024** na plataforma da disciplina (plataforma a definir).
+**Prazo**: Submeta a atividade até **12/11/2024** na plataforma da disciplina (plataforma a definir).
