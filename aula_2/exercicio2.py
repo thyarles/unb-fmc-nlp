@@ -11,7 +11,7 @@ import regex as re  # Para limpar texto (regex)
 import unicodedata  # Para remover caracteres não UTF-8
 import random       # Para randomizar dados treino/teste
 import time         # Para metir o tempo de treinamento
-import concurrent.futures # Para parelizar contagem de bigramas
+import math         # Para calcular perplexidade
 
 # Importação de módulos de pacotes
 from multiprocessing import Pool, cpu_count           # Para processamento paralelo
@@ -33,11 +33,11 @@ def verificar():
 
   # Baixa se não encontrou
   if not baixado:
-    print('Carregando tokenizadores do NTLK...')
+    print('==> Carregando tokenizadores do NTLK...')
     try:
         nltk.download('punkt')
         nltk.download('punkt_tab')
-        print('Baixado com sucesso!')
+        print('==> Baixado com sucesso!')
     except Exception as e:
         print(f'Erro ao baixar o tokenizador: {e}')
 
@@ -93,6 +93,9 @@ def sentenizar(arquivo):
 
   # Lê JSON
   caminho = f'{os.getcwd()}/{arquivo}'
+
+  print(f'==> Processando {caminho}...')
+
   try:
     with open(caminho, 'r', encoding='utf-8') as f:
       conteudo = json.load(f)
@@ -129,12 +132,12 @@ def paralelizar(padrao, funcao, tarefas=1):
 
 # Função para calcular bigramas
 def calcular_bigramas(sentencas):
+  print('==> Calculando probabilidades dos bigramas...')
+  inicio = time.time()
+
   # Prepara dicionários com auto inicialização
   bigramas  = defaultdict(lambda: defaultdict(int))
   unigramas = defaultdict(int)
-
-  print('==> Calculando probabilidades dos bigramas...')
-  inicio = time.time()
 
   for sentenca in sentencas:
     # Com esse ficou muito quebrado
@@ -176,7 +179,7 @@ def gerar_texto(probabilidades, raiz=None, minimo=None, maximo=None):
     texto = []
     palavra_atual = inicio  
   else:
-    texto = [inicio] + raiz.split()
+    texto = raiz.split()
     palavra_atual = texto[-1]
 
   for _ in range(maximo - 1):
@@ -193,10 +196,37 @@ def gerar_texto(probabilidades, raiz=None, minimo=None, maximo=None):
       weights=list(palavra_proxima.values())
     )[0]
     if palavra_atual == fim and len(texto) >= minimo: break
-    if palavra_atual != fim: texto.append(palavra_atual)
+    if palavra_atual != inicio and palavra_atual != fim:
+      texto.append(palavra_atual)
   texto = re.sub(r'\s+([.,!?])', r'\1', ' '.join(texto))
   texto = nltk.sent_tokenize(texto, language='portuguese')
   return ' '.join(texto).strip()
+
+# Função para calcular a perplexidade
+def perplexidade(probabilidades, sentencas):
+
+  # Baixa perplexidade (1-100): modelo com boa predição
+  # Alta perplexidade (100-1000): modelo não tem boa predição
+  # Perplexidade perfeita: 1
+  # Perplexidade imperfeita: infinito (modelo totalmente aleatório)
+
+  print('==> Calculando a perplexidade...')
+  logaritmo_probabilidade = 0
+  quantidade_palavras = 0
+
+  for sentenca in sentencas:
+    palavras = sentenca.split()
+    for i in range(len(palavras) - 1):
+      palavra, proxima_palavra = palavras[i], palavras[i + 1]
+      # Temos que evitar log de zero
+      probabilidade = probabilidades.get(palavra, {}).get(proxima_palavra, 1e-8)
+      logaritmo_probabilidade += math.log(probabilidade)
+      quantidade_palavras += 1
+
+  media = logaritmo_probabilidade / quantidade_palavras
+  valor_perplexidade = math.exp(-media)
+  print(f'    perplexidade = {valor_perplexidade:.2f}.')
+  return valor_perplexidade
 
 
 # Testes temporários
@@ -204,5 +234,6 @@ if __name__ == '__main__':
   sentencas = paralelizar('corpus/*.json', sentenizar, 'max')
   treino, teste = train_test_split(sentencas, test_size=0.2)
   probabilidades = calcular_bigramas(treino)
+  perplexidade(probabilidades, sentencas)
   print(gerar_texto(probabilidades))
   print(gerar_texto(probabilidades, raiz='O Charles é'))
