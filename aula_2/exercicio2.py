@@ -81,6 +81,7 @@ def limpar(texto):
   
   return texto_limpo.strip()
 
+
 # Função para ler JSON no disco e tokenizar
 def sentenizar(arquivo):
 
@@ -103,6 +104,7 @@ def sentenizar(arquivo):
     print(f"Erro ao processar {arquivo}: {e}")
     return []
 
+
 # Função para carregar JSONs de forma paralela
 def paralelizar(padrao, funcao, tarefas=1):
   # Se max, vamos usar todas as CPUs
@@ -115,6 +117,7 @@ def paralelizar(padrao, funcao, tarefas=1):
   # Transforma em lista
   result = [res for sub in parcial for res in sub]
   return result
+
 
 # Função para calcular bigramas
 def calcular_bigramas(sentencas):
@@ -140,6 +143,7 @@ def calcular_bigramas(sentencas):
     }
 
   return probabilidades   
+
 
 # Testes temporários
 if __name__ == "__main__":
