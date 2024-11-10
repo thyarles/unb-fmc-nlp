@@ -9,10 +9,13 @@ import nltk         # Natural Language Tool Kit
 import glob         # Para entender padrão de arquivos
 import regex as re  # Para limpar texto (regex)
 import unicodedata  # Para remover caracteres não UTF-8
+import random       # Para randomizar dados treino/teste
 
 # Importação de módulos de pacotes
-from multiprocessing import Pool, cpu_count # Para processamento paralelo
-from collections import defaultdict         # Para uso no bigrama
+from multiprocessing import Pool, cpu_count           # Para processamento paralelo
+from collections import defaultdict                   # Para uso no bigrama
+from sklearn.model_selection import train_test_split  # Para dividir dados
+
 
 # Função para verificar dados do tokenizador
 def verificar():
@@ -94,9 +97,8 @@ def sentenizar(arquivo):
         return []
       texto = limpar(texto)
       sentencas = nltk.sent_tokenize(texto, language='portuguese')
-      # Retorna só os maiores que 10 caracteres (o regex não está 100%)
-      inicio_fim = [f"<s>{sentenca}</s>" for sentenca in sentencas if len(sentenca) >= 25]
-      return inicio_fim
+      # Retorna só os maiores que 25 caracteres (o regex não está 100%)
+      return [sentenca for sentenca in sentencas if len(sentenca) >= 25]
   except Exception as e:
     print(f"Erro ao processar {arquivo}: {e}")
     return []
@@ -114,7 +116,34 @@ def paralelizar(padrao, funcao, tarefas=1):
   result = [res for sub in parcial for res in sub]
   return result
 
+# Função para calcular bigramas
+def calcular_bigramas(sentencas):
+  # Prepara dicionários com auto inicialização
+  bigramas  = defaultdict(lambda: defaultdict(int))
+  unigramas = defaultdict(int)
+
+  for sentenca in sentencas:
+    palavras = nltk.word_tokenize(sentenca, language='portuguese')
+    # Adiciona marcação de sentença
+    palavras = ['<s>'] + palavras + ['</s>']
+    for i in range(len(palavras) - 1):
+      unigramas[palavras[i]] += 1
+      bigramas[palavras[i]][palavras[i + 1]] += 1
+    unigramas[palavras[-1]] += 1  # Última palavra
+
+  # Converter contagens em probabilidades
+  probabilidades = {}
+  for palavra, seguinte in bigramas.items():
+    probabilidades[palavra] = {
+      proxima_palavra: count / unigramas[palavra]
+      for proxima_palavra, count in seguinte.items()
+    }
+
+  return probabilidades   
+
 # Testes temporários
 if __name__ == "__main__":
-  resultado = paralelizar('corpus_test/*.json', sentenizar, 'max')
+  sentencas = paralelizar('corpus_test/*.json', sentenizar, 'max')
+  treino, teste = train_test_split(sentencas, test_size=0.2)
+  bigramas = calcular_bigramas(treino)
   print("fim")
