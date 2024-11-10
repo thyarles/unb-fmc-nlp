@@ -130,6 +130,15 @@ def paralelizar(padrao, funcao, tarefas=1):
   return result
 
 
+# Função para dividir treino/teste
+def separar_teste(sentencas, percentual_teste=0.2):
+  treino, teste = train_test_split(
+    sentencas,
+    test_size=float(percentual_teste)
+  )
+  return treino, teste
+
+
 # Função para calcular bigramas
 def calcular_bigramas(sentencas):
   print('==> Calculando probabilidades dos bigramas...')
