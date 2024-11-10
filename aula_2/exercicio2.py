@@ -6,6 +6,7 @@
 import os           # Para uso do sistema operacional
 import json         # Para ler jsons (na pasta corpus)
 import nltk         # Natural Language Tool Kit
+import glob         # Para entender padrão de arquivos
 import regex as re  # Para limpar texto (regex)
 import unicodedata  # Para remover caracteres não UTF-8
 
@@ -58,9 +59,9 @@ def limpar(texto):
     [' . ',   r'=='],                             # Títulos
     [' ',     r'Categoria:\w+'],                  # Tags
     ['. ',    r' \* '],                           # Asteriscos
-    [r'\1',   r'\s+([,";:.])'],                   # Pontuação com espaço
     [r'\1',   r'([,";:.]){,5}'],                  # Pontuação duplicada
     [' ',     r' +'],                             # Espaços dobrados
+    [r'\1',   r'\s+([,";:.])'],                   # Pontuação com espaço
     ['',      r'\.(\s\w+\s?[-,:]?\s?){1,4}\.']    # Frases com poucas palavras
     # Ajustes de pontuações
     # [r'\1 \2 \3', r'(\w+)([%s])([ %s])' % (pontuacao, pontuacao)], 
@@ -89,13 +90,31 @@ def sentenizar(arquivo):
     with open(caminho, 'r', encoding='utf-8') as f:
       conteudo = json.load(f)
       texto = conteudo.get("text", "")
+      if not texto:
+        return []
       texto = limpar(texto)
       sentencas = nltk.sent_tokenize(texto, language='portuguese')
-      inicio_fim = [f"<s>{sentenca}</s>" for sentenca in sentencas]
+      # Retorna só os maiores que 10 caracteres (o regex não está 100%)
+      inicio_fim = [f"<s>{sentenca}</s>" for sentenca in sentencas if len(sentenca) >= 25]
       return inicio_fim
   except Exception as e:
     print(f"Erro ao processar {arquivo}: {e}")
     return []
 
+# Função para carregar JSONs de forma paralela
+def paralelizar(padrao, funcao, tarefas=1):
+  # Se max, vamos usar todas as CPUs
+  tarefas = cpu_count()-1 if tarefas=='max' else tarefas
+  # Monta caminho
+  arquivos = glob.glob(padrao)
+  # Processando
+  with Pool(tarefas) as p:
+      parcial = p.map(funcao, arquivos)
+  # Transforma em lista
+  result = [res for sub in parcial for res in sub]
+  return result
+
 # Testes temporários
-sentenizar('corpus/240.json')
+if __name__ == "__main__":
+  resultado = paralelizar('corpus_test/*.json', sentenizar, 'max')
+  print("fim")
