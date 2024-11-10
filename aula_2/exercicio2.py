@@ -94,7 +94,7 @@ def sentenizar(arquivo):
   # Lê JSON
   caminho = f'{os.getcwd()}/{arquivo}'
 
-  print(f'==> Processando {caminho}...')
+  # print(f'==> Processando {caminho}...')
 
   try:
     with open(caminho, 'r', encoding='utf-8') as f:
