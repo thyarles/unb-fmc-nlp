@@ -144,7 +144,7 @@ class ModeloBigramas:
         if not self.modelo:
             raise ValueError("O modelo não foi treinado.")
 
-        for sentenca in self.sentencas:
+        for sentenca in self.treino:
             palavras = sentenca.split()
             for i in range(len(palavras) - 1):
                 palavra, proxima_palavra = palavras[i], palavras[i + 1]
