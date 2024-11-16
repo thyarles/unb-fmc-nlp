@@ -7,6 +7,8 @@ Os alunos devem implementar e treinar classificadores de texto utilizando alguma
 
 #### Duas bases de dados serão escolhidas e descritas na planilha [Aqui](https://docs.google.com/spreadsheets/d/1F485czBA5zR60J4efsEz8-4YydywazOPCKVjb1o0jUs/edit?gid=0#gid=0). As bases escolhidas para cada aluno serão disponibilizadas um dia antes da entrega. Façam seus códigos e experimentos de forma que seja rápido e fácil executar para alguma das bases escolhidas no dia anterior. 
 
+Data da entrega: **26/11/2024**
+
 ## Ferramentas e Bibliotecas
 
 - **Linguagem**: Python  
