@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 # Charles
+.DS_Store
 corpus*
 venv
 corpus.zip
