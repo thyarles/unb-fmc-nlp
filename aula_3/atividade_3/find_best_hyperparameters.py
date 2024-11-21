@@ -22,19 +22,22 @@ class AtividadeTres:
             random_state (int): Semente para reprodução. Valor padrão = None.
         """
         self.random_state = random_state
+        print("Classe iniciada sem semente!" if random_state == None 
+              else f"Classe iniciada com semente {random_state}!") 
 
     @staticmethod
-    def load_data(filepath:str):
+    def load_data(filename:str, path:str='in/'):
         """
         Lê dados CSV.
         
         Args:
-            filepath (str): Caminho para o arquivo CSV.
+            filename (str): Nome do arquivo CSV.
+            path (str): Caminho para o arquivo CSV.
         
         Returns:
             pd.DataFrame: Arquivo convertido em Pandas.
         """
-        return pd.read_csv(filepath)
+        return pd.read_csv(f'{path}/{filename}')
 
     def split_data(self, data: pd.DataFrame, label_col: str, test_size:float=0.2):
         """
