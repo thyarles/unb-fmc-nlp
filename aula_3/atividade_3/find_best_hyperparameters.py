@@ -39,26 +39,35 @@ class AtividadeTres:
         """
         return pd.read_csv(f'{path}/{filename}')
 
-    def split_data(self, data: pd.DataFrame, label_col: str, test_size:float=0.2):
+    def split_data(self, data: pd.DataFrame, text_col:str, class_col:str, test_size:float=0.2):
         """
         Divide os dados em treino e teste.
         
         Args:
             data (pd.DataFrame): Dados para dividir.
-            label_col (str): Coluna com a classificação.
+            text_col (str): Coluna com o texto para classificar.
+            class_col (str): Coluna com a classificação.
             test_size (float): Tamanho da base de teste. Valor padrão = 0.2.
         
         Returns:
-            tuple: Train-test splits (X_train, X_test, y_train, y_test).
+            pd.DataFrame: Base de treino.
+            pd.DataFrame: Base de teste
+            dict: Train-test splits (X_train, X_test, y_train, y_test).
         """
-        X = data.drop(columns=[label_col])
-        y = data[label_col]
+        X = data[text_col]
+        y = data[class_col]
 
         if self.random_state:
             print(f'Dados divididos com tamanho do teste {test_size:0.2f} e semente {self.random_state}!')
-            return train_test_split(X, y, test_size=test_size, random_state=self.random_state)
-        print(f'Dados divididos com tamanho do teste {test_size:0.2f} e sem semente!')
-        return train_test_split(X, y, test_size=test_size)
+            xtr, xte, ytr, yte = train_test_split(X, y, test_size=test_size, random_state=self.random_state)
+        else:
+            print(f'Dados divididos com tamanho do teste {test_size:0.2f} e sem semente!')
+            xtr, xte, ytr, yte = train_test_split(X, y, test_size=test_size)
+        train = pd.DataFrame({"text": xtr, "class": ytr})
+        test = pd.DataFrame({"text": xte, "class": yte})
+        series = {"X_train": xtr, "X_test": xte, "y_train": ytr, "y_test": yte}
+        print(f'Dicionário de séries: {series.keys()}')
+        return train, test, series
 
     @staticmethod
     def save_data_frame(data:pd.DataFrame, filename:str, path:str='out/'):
@@ -66,8 +75,7 @@ class AtividadeTres:
         Salva dados treinados para o disco.
         
         Args:
-            train (pd.DataFrame): Dados de treinamento..
-            test (pd.DataFrame): Dados de teste.
+            data (pd.DataFrame): Dados para salvar.
             file (str): Nome para o arquivo.
             path (str): Diretório para salvar. Valor padrão = 'out/'.
         """
