@@ -11,44 +11,52 @@ from sklearn.metrics import f1_score, accuracy_score
 
 class AtividadeTres:
     """
-    Classe para buscar hiper-parâmetros, treinar o modelo, avaliar, salvar e carregar os resultados. 
+    Classe para buscar hiper-parâmetros, treinar o modelo, avaliar, salvar e carregar os resultados.
     """
 
-    def __init__(self, random_state:int=None):
+    def __init__(self, random_state: int = None):
         """
         Inicializa a classe configurando randomizador para possibilitar reprodução.
-        
+
         Args:
             random_state (int): Semente para reprodução. Valor padrão = None.
         """
         self.random_state = random_state
-        print("Classe iniciada sem semente!" if random_state == None 
-              else f"Classe iniciada com semente {random_state}!") 
+        print(
+            "Classe iniciada sem semente!"
+            if random_state == None
+            else f"Classe iniciada com semente {random_state}!"
+        )
 
     @staticmethod
-    def load_data(filename:str, path:str='in/'):
+    def load_data(filename: str, path: str = "in/"):
         """
         Lê dados CSV.
-        
+
         Args:
             filename (str): Nome do arquivo CSV.
             path (str): Caminho para o arquivo CSV.
-        
+
         Returns:
             pd.DataFrame: Arquivo convertido em Pandas.
         """
-        return pd.read_csv(f'{path}/{filename}')
+        return pd.read_csv(f"{path}/{filename}")
 
-    def split_data(self, data: pd.DataFrame, text_col:str, class_col:str, test_size:float=0.2):
+    def split_data(
+        self, data: pd.DataFrame, 
+        text_col: str, 
+        class_col: str, 
+        test_size: float = 0.2
+    ):
         """
         Divide os dados em treino e teste.
-        
+
         Args:
             data (pd.DataFrame): Dados para dividir.
             text_col (str): Coluna com o texto para classificar.
             class_col (str): Coluna com a classificação.
             test_size (float): Tamanho da base de teste. Valor padrão = 0.2.
-        
+
         Returns:
             pd.DataFrame: Base de treino.
             pd.DataFrame: Base de teste
@@ -58,22 +66,28 @@ class AtividadeTres:
         y = data[class_col]
 
         if self.random_state:
-            print(f'Dados divididos com tamanho do teste {test_size:0.2f} e semente {self.random_state}!')
-            xtr, xte, ytr, yte = train_test_split(X, y, test_size=test_size, random_state=self.random_state)
+            print(
+                f"Dados divididos com tamanho do teste {test_size:0.2f} e semente {self.random_state}!"
+            )
+            xtr, xte, ytr, yte = train_test_split(
+                X, y, test_size=test_size, random_state=self.random_state
+            )
         else:
-            print(f'Dados divididos com tamanho do teste {test_size:0.2f} e sem semente!')
+            print(
+                f"Dados divididos com tamanho do teste {test_size:0.2f} e sem semente!"
+            )
             xtr, xte, ytr, yte = train_test_split(X, y, test_size=test_size)
         train = pd.DataFrame({"text": xtr, "class": ytr})
         test = pd.DataFrame({"text": xte, "class": yte})
         series = {"X_train": xtr, "X_test": xte, "y_train": ytr, "y_test": yte}
-        print(f'Dicionário de séries: {series.keys()}')
+        print(f"Dicionário de séries: {series.keys()}")
         return train, test, series
 
     @staticmethod
-    def save_data_frame(data:pd.DataFrame, filename:str, path:str='out/'):
+    def save_data_frame(data: pd.DataFrame, filename: str, path: str = "out/"):
         """
         Salva dados treinados para o disco.
-        
+
         Args:
             data (pd.DataFrame): Dados para salvar.
             file (str): Nome para o arquivo.
@@ -81,36 +95,38 @@ class AtividadeTres:
         """
         os.makedirs(path, exist_ok=True)
         data.to_csv(os.path.join(path, filename), index=False)
-        print(f'Arquivo {path}{filename} salvo com sucesso!')
+        print(f"Arquivo {path}{filename} salvo com sucesso!")
 
     @staticmethod
-    def create_param_grid(param_dict:dict):
+    def create_param_grid(param_dict: dict):
         """
         Monta conjunto de hiper parâmetros para uso no greedy_search.
-        
+
         Args:
             param_dict (dict): Dicionário com parâmetros e valores.
-        
+
         Returns:
             list: Lista de dicionário com a combinação dos hiper parâmetros.
         """
         keys, values = zip(*param_dict.items())
         result = [dict(zip(keys, v)) for v in product(*values)]
-        print(f'Hiper parâmetros montados: {result}')
+        print(f"Hiper parâmetros montados: {result}")
         return result
 
     @staticmethod
-    def greedy_search(model, param_grid:list, X_train:pd.Series, y_train:pd.Series, vectorizer):
+    def greedy_search(
+        model, param_grid: list, X_train: pd.Series, y_train: pd.Series, vectorizer
+    ):
         """
         Executa busca usando hiper parâmetros.
-        
+
         Args:
             model (class): Um modelo do Sklearn [MultinomialNB | LogisticRegression | LinearSVC].
             param_grid (list): Hiper parâmetros.
             X_train (pd.Series): Dados.
             y_train (pd.Series): Classes dos dados (labels).
             vectorizer (Transformer): Vetorizador do Sklearn [CountVectorizer | TfidfVectorizer].
-        
+
         Returns:
             pd.DataFrame: Pandas dataframe com hiper parâmetros e métricas.
         """
@@ -120,32 +136,40 @@ class AtividadeTres:
             clf = model(**params)
             clf.fit(vec, y_train)
             score = clf.score(vec, y_train)
-            results.append({**params, 'score': score})
-            print(f'Hiper parâmetro calculado para {params} com score {score}!')
+            results.append({**params, "score": score})
+            print(f"Hiper parâmetro calculado para {params} com score {score}!")
         return pd.DataFrame(results)
 
     @staticmethod
-    def metrics(vectorizer, model, test:pd.DataFrame, text_col:str='text', class_col:str='class'):
+    def metrics(
+        vectorizer,
+        model,
+        test: pd.DataFrame,
+        text_col: str = "text",
+        class_col: str = "class",
+    ):
         """
         Calcula métricas no conjunto de teste usando o modelo treinado.
-        
+
         Args:
             vectorizer (Transformer): Vetorizador usado no treinamento.
             modelo (Model): Modelo treinado.
             test (pd.DataFrame): Dados de teste.
             text_col (str): Coluna que contém texto para classificar. Valor padrão = 'text'.
             class_col (str): Coluna que contem as classes (labels). Valor padrão = 'class'.
-      
+
         Returns:
             dict: Dicionário com as métricas f1_macro, f1_micro e acurácia.
         """
         X_test = vectorizer.transform(test[text_col])
         y_pred = model.predict(X_test)
-        f1_macro = f1_score(test[class_col], y_pred, average='macro')
-        f1_micro = f1_score(test[class_col], y_pred, average='micro')
+        f1_macro = f1_score(test[class_col], y_pred, average="macro")
+        f1_micro = f1_score(test[class_col], y_pred, average="micro")
         acc = accuracy_score(test[class_col], y_pred)
-        result = {"f1_score_macro": f1_macro, 
-                  "f1_score_micro": f1_micro,
-                  "accuracy": acc}
-        print(f'Métricas: {result}')
+        result = {
+            "f1_score_macro": f1_macro,
+            "f1_score_micro": f1_micro,
+            "accuracy": acc,
+        }
+        print(f"Métricas: {result}")
         return result
