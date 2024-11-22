@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import f1_score, accuracy_score
 
 
@@ -120,35 +120,42 @@ class AtividadeTres:
         Executa busca usando hiper parâmetros.
 
         Args:
-            model_name (str): Um modelo do Sklearn [nb | lr | svm].
+            model_name (str): Um modelo do Sklearn [MultinomialNB, LogisticRegression ou LinearSVC].
             param_grid (list): Hiper parâmetros.
             series (dict): Dicionário com 'X_train', 'X_test', 'y_train', 'y_test' (pd.Series).
 
         Returns:
             pd.DataFrame: Pandas data frame com hiper parâmetros e métricas.
         """
-        if model_name == "nb":
+
+        # Para eliminar warnings de convergência e configurações incompatíveis
+        import warnings
+        warnings.simplefilter("ignore")
+        # from sklearn.exceptions import ConvergenceWarning
+        # warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+        # Apenas modelos habilitados
+        if model_name == "MultinomialNB":
             model_name = MultinomialNB
-        elif model_name == "lr":
+        elif model_name == "LogisticRegression":
             model_name = LogisticRegression
-        elif model_name == "svm":
+        elif model_name == "LinearSVC":
             model_name = LinearSVC
         else:
-            raise Exception("Valores válidos para modelo: nb, lr ou svm.")
+            raise Exception("Valores válidos para modelo: MultinomialNB, LogisticRegression ou LinearSVC.")
 
         results = []
         vectorizer = CountVectorizer()
         X_vec_train = vectorizer.fit_transform(series['X_train'])
-        # y_vec_train = vectorizer.transform(series['y_train'])
 
         for params in param_grid:
             try:
                 clf = model_name(**params)
                 clf.fit(X_vec_train, series['y_train'])
                 score = clf.score(X_vec_train, series['y_train'])
-                results.append({**params, "score": score})
+                if score < .998: # Para evitar Overfitting
+                    results.append({**params, "score": score})
             except:
-                print(f"Pulando parâmetros {params}: Não suportado nessa configuração.")
                 continue                
         return pd.DataFrame(results)
 
@@ -189,8 +196,9 @@ class AtividadeTres:
 
 # Debug
 if __name__ == "__main__":
-    nb_params = {  # MultinomialNB
-        "alpha": [0.1, 0.25, 0.5, 0.75, 1.0],
+    nb_params = {   # MultinomialNB
+    'alpha': [0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0],
+    'fit_prior': [True, False]
     }
 
     lr_params = {  # LogisticRegression
@@ -202,7 +210,7 @@ if __name__ == "__main__":
         "loss": ["hinge", "squared_hinge"],
         "max_iter": [100, 250, 500, 1000, 5000],
     }
-    a3 = AtividadeTres(random_state=21)
+    a3 = AtividadeTres()
     BASE = "CSTR"
     FILENAME = BASE + ".csv"
     cstr = a3.load_data(FILENAME)
