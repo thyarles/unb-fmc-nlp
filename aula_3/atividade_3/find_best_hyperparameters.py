@@ -43,10 +43,7 @@ class AtividadeTres:
         return pd.read_csv(f"{path}/{filename}")
 
     def split_data(
-        self, data: pd.DataFrame, 
-        text_col: str, 
-        class_col: str, 
-        test_size: float = 0.2
+        self, data: pd.DataFrame, text_col: str, class_col: str, test_size: float = 0.2
     ):
         """
         Divide os dados em treino e teste.
@@ -115,29 +112,44 @@ class AtividadeTres:
 
     @staticmethod
     def greedy_search(
-        model, param_grid: list, X_train: pd.Series, y_train: pd.Series, vectorizer
+        model_name,
+        param_grid: list,
+        series: dict,
     ):
         """
         Executa busca usando hiper parâmetros.
 
         Args:
-            model (class): Um modelo do Sklearn [MultinomialNB | LogisticRegression | LinearSVC].
+            model_name (str): Um modelo do Sklearn [nb | lr | svm].
             param_grid (list): Hiper parâmetros.
-            X_train (pd.Series): Dados.
-            y_train (pd.Series): Classes dos dados (labels).
-            vectorizer (Transformer): Vetorizador do Sklearn [CountVectorizer | TfidfVectorizer].
+            series (dict): Dicionário com 'X_train', 'X_test', 'y_train', 'y_test' (pd.Series).
 
         Returns:
-            pd.DataFrame: Pandas dataframe com hiper parâmetros e métricas.
+            pd.DataFrame: Pandas data frame com hiper parâmetros e métricas.
         """
+        if model_name == "nb":
+            model_name = MultinomialNB
+        elif model_name == "lr":
+            model_name = LogisticRegression
+        elif model_name == "svm":
+            model_name = LinearSVC
+        else:
+            raise Exception("Valores válidos para modelo: nb, lr ou svm.")
+
         results = []
+        vectorizer = CountVectorizer()
+        X_vec_train = vectorizer.fit_transform(series['X_train'])
+        # y_vec_train = vectorizer.transform(series['y_train'])
+
         for params in param_grid:
-            vec = vectorizer.fit_transform(X_train)
-            clf = model(**params)
-            clf.fit(vec, y_train)
-            score = clf.score(vec, y_train)
-            results.append({**params, "score": score})
-            print(f"Hiper parâmetro calculado para {params} com score {score}!")
+            try:
+                clf = model_name(**params)
+                clf.fit(X_vec_train, series['y_train'])
+                score = clf.score(X_vec_train, series['y_train'])
+                results.append({**params, "score": score})
+            except:
+                print(f"Pulando parâmetros {params}: Não suportado nessa configuração.")
+                continue                
         return pd.DataFrame(results)
 
     @staticmethod
@@ -173,3 +185,35 @@ class AtividadeTres:
         }
         print(f"Métricas: {result}")
         return result
+
+
+# Debug
+if __name__ == "__main__":
+    nb_params = {  # MultinomialNB
+        "alpha": [0.1, 0.25, 0.5, 0.75, 1.0],
+    }
+
+    lr_params = {  # LogisticRegression
+        "C": [0.1, 0.25, 1.0, 5.0, 10.0],
+        "solver": ["lbfgs", "liblinear"],
+    }
+    svm_params = {  # SVM
+        "C": [0.01, 0.1, 1, 5, 10, 50, 100],
+        "loss": ["hinge", "squared_hinge"],
+        "max_iter": [100, 250, 500, 1000, 5000],
+    }
+    a3 = AtividadeTres(random_state=21)
+    BASE = "CSTR"
+    FILENAME = BASE + ".csv"
+    cstr = a3.load_data(FILENAME)
+    train, test, series = a3.split_data(
+        data=cstr, text_col="text", class_col="class", test_size=0.2
+    )
+    a3.save_data_frame(train, BASE + "_train.csv")
+    a3.save_data_frame(test, BASE + "_test.csv")
+    tmp = a3.greedy_search(
+        model_name="nb",
+        param_grid=a3.create_param_grid(nb_params),
+        series=series
+    )
+    print(tmp)

@@ -164,3 +164,4 @@ cython_debug/
 corpus*
 venv
 corpus.zip
+aula_3/atividade_3/.vscode/settings.json
