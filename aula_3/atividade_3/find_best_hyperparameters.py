@@ -1,4 +1,5 @@
 import os
+import pickle
 import pandas as pd
 from itertools import product
 from sklearn.model_selection import train_test_split
@@ -91,7 +92,7 @@ class AtividadeTres:
             path (str): Diretório para salvar. Valor padrão = 'out/'.
         """
         os.makedirs(path, exist_ok=True)
-        data.to_csv(os.path.join(path, filename), index=False)
+        data.to_csv(os.path.join(path, filename), index=True)
         print(f"Arquivo {path}{filename} salvo com sucesso!")
 
     @staticmethod
@@ -107,7 +108,7 @@ class AtividadeTres:
         """
         keys, values = zip(*param_dict.items())
         result = [dict(zip(keys, v)) for v in product(*values)]
-        print(f"Hiper parâmetros montados: {result}")
+        print(f"Hiper parâmetros montados: {result[0].keys()}")
         return result
 
     @staticmethod
@@ -130,6 +131,7 @@ class AtividadeTres:
 
         # Para eliminar warnings de convergência e configurações incompatíveis
         import warnings
+
         warnings.simplefilter("ignore")
         # from sklearn.exceptions import ConvergenceWarning
         # warnings.filterwarnings("ignore", category=ConvergenceWarning)
@@ -142,86 +144,76 @@ class AtividadeTres:
         elif model_name == "LinearSVC":
             model_name = LinearSVC
         else:
-            raise Exception("Valores válidos para modelo: MultinomialNB, LogisticRegression ou LinearSVC.")
+            raise Exception(
+                "Valores válidos para modelo: MultinomialNB, LogisticRegression ou LinearSVC."
+            )
 
         results = []
         vectorizer = CountVectorizer()
-        X_vec_train = vectorizer.fit_transform(series['X_train'])
+        X_vec_train = vectorizer.fit_transform(series["X_train"])
 
         for params in param_grid:
             try:
                 clf = model_name(**params)
-                clf.fit(X_vec_train, series['y_train'])
-                score = clf.score(X_vec_train, series['y_train'])
-                if score < .998: # Para evitar Overfitting
+                clf.fit(X_vec_train, series["y_train"])
+                score = clf.score(X_vec_train, series["y_train"])
+                if score < 0.998:  # Para evitar Overfitting
                     results.append({**params, "score": score})
             except:
-                continue                
+                continue
         return pd.DataFrame(results)
 
-    @staticmethod
-    def metrics(
-        vectorizer,
-        model,
-        test: pd.DataFrame,
-        text_col: str = "text",
-        class_col: str = "class",
-    ):
+    def train(self, model_name: str, params: dict, series: dict, base: str):
         """
-        Calcula métricas no conjunto de teste usando o modelo treinado.
+        Treina modelo usando parâmetros.
 
         Args:
-            vectorizer (Transformer): Vetorizador usado no treinamento.
-            modelo (Model): Modelo treinado.
-            test (pd.DataFrame): Dados de teste.
-            text_col (str): Coluna que contém texto para classificar. Valor padrão = 'text'.
-            class_col (str): Coluna que contem as classes (labels). Valor padrão = 'class'.
+            params (dict): Dicionário com o id do modelo a treinar e parâmetros.
+            series (dict): Dados do split (train, test).
+            base (str): Nome da base de dados para salvar o pickle (./out/BASE.pickle).
 
         Returns:
-            dict: Dicionário com as métricas f1_macro, f1_micro e acurácia.
+            Modelo treinado.
         """
-        X_test = vectorizer.transform(test[text_col])
-        y_pred = model.predict(X_test)
-        f1_macro = f1_score(test[class_col], y_pred, average="macro")
-        f1_micro = f1_score(test[class_col], y_pred, average="micro")
-        acc = accuracy_score(test[class_col], y_pred)
+        # Apenas modelos habilitados
+        if model_name == "nb":
+            model = MultinomialNB(**params)
+        elif model_name == "lr":
+            model = LogisticRegression(**params)
+        elif model_name == "svm":
+            model = LinearSVC(**params)
+        else:
+            raise Exception(
+                "Valores válidos para modelo: MultinomialNB, LogisticRegression ou LinearSVC."
+            )
+
+        # Treinamento do modelo
+        model_pickle = base + "_" + model_name + ".pickle"
+        path_model_name = "out/" + model_pickle
+        vectorizer = CountVectorizer()
+        X_vec_train = vectorizer.fit_transform(series["X_train"])
+        if os.path.exists(path_model_name):
+            print(f"Modelo será lido de '{path_model_name}'.")
+            with open(path_model_name, "rb") as file:
+                model = pickle.load(file)
+        else:
+            model.fit(X_vec_train, series["y_train"])
+            # Salva para evitar novo treinamento
+            with open(path_model_name, "wb") as file:
+                pickle.dump(model, file)
+
+        # Predição no conjunto de teste
+        X_vec_test = vectorizer.transform(series["X_test"])
+        y_pred_test = model.predict(X_vec_test)
+
+        # Cálculo das métricas no conjunto de teste
+        f1_macro = f1_score(series["y_test"], y_pred_test, average="macro")
+        f1_micro = f1_score(series["y_test"], y_pred_test, average="micro")
+        acc = accuracy_score(series["y_test"], y_pred_test)
+
         result = {
-            "f1_score_macro": f1_macro,
-            "f1_score_micro": f1_micro,
-            "accuracy": acc,
+            "f1_score_macro": float(f1_macro),
+            "f1_score_micro": float(f1_micro),
+            "accuracy": float(acc),
         }
-        print(f"Métricas: {result}")
         return result
-
-
-# Debug
-if __name__ == "__main__":
-    nb_params = {   # MultinomialNB
-    'alpha': [0.1, 0.25, 0.5, 0.75, 1.0, 2.0, 5.0],
-    'fit_prior': [True, False]
-    }
-
-    lr_params = {  # LogisticRegression
-        "C": [0.1, 0.25, 1.0, 5.0, 10.0],
-        "solver": ["lbfgs", "liblinear"],
-    }
-    svm_params = {  # SVM
-        "C": [0.01, 0.1, 1, 5, 10, 50, 100],
-        "loss": ["hinge", "squared_hinge"],
-        "max_iter": [100, 250, 500, 1000, 5000],
-    }
-    a3 = AtividadeTres()
-    BASE = "CSTR"
-    FILENAME = BASE + ".csv"
-    cstr = a3.load_data(FILENAME)
-    train, test, series = a3.split_data(
-        data=cstr, text_col="text", class_col="class", test_size=0.2
-    )
-    a3.save_data_frame(train, BASE + "_train.csv")
-    a3.save_data_frame(test, BASE + "_test.csv")
-    tmp = a3.greedy_search(
-        model_name="nb",
-        param_grid=a3.create_param_grid(nb_params),
-        series=series
-    )
-    print(tmp)
