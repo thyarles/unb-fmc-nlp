@@ -38,7 +38,7 @@
 
 ## Aula 10 -- Masked Language Models
 
-* [Exercício 10](aula_10/exercicio.md)
+* [Exercício 10](aula_10/exercicio10.md)
 
   
 
