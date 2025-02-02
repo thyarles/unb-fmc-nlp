@@ -102,14 +102,14 @@ class MyBert:
     def matriz_confusao(self, resultado):    
         preds = np.argmax(resultado.predictions, axis=1)
         cm = confusion_matrix(resultado.label_ids, preds)
-        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=self.label.classes_)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=self.le.classes_)
         disp.plot(xticks_rotation='vertical')
         plt.title('Matriz de confusão')
         plt.show()
 
 
     # Cálculo das métricas
-    def compute_metrics(p):
+    def compute_metrics(self, p):
         preds = np.argmax(p.predictions, axis=1)
         labels = p.label_ids
         return {

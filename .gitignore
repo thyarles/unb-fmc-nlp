@@ -166,3 +166,4 @@ venv
 corpus.zip
 aula_3/atividade_3/.vscode/settings.json
 aula_3/atividade_3/out/*.pickle
+aula_10/out/
