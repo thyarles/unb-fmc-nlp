@@ -40,6 +40,10 @@
 
 * [Exercício 10](aula_10/exercicio10.md)
 
+## Aula 11 -- Implementando GPT2
+
+* [Exercício 11](aula_11/exercicio11.md)
+
   
 
   
